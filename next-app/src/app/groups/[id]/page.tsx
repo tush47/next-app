@@ -1,0 +1,199 @@
+// 'use client';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { getGroupById, getExpensesByGroupId, getSettlementsByGroupId } from '@/data/mockData';
+import { 
+  PlusIcon, 
+  CurrencyRupeeIcon, 
+  UsersIcon, 
+  CalendarIcon,
+  ArrowRightIcon 
+} from '@heroicons/react/24/outline';
+
+export default function GroupDashboard({ params }: { params: { id: string } }) {
+  const group = getGroupById(params.id);
+  
+  if (!group) {
+    notFound();
+  }
+
+  const expenses = getExpensesByGroupId(params.id);
+  const settlements = getSettlementsByGroupId(params.id);
+  
+  // Calculate balances (simplified - in real app, this would be more complex)
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const perPersonShare = totalExpenses / group.members.length;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{group.name}</h1>
+              {group.description && (
+                <p className="text-gray-600 mt-2">{group.description}</p>
+              )}
+              <div className="flex items-center mt-4 space-x-6 text-sm text-gray-500">
+                <div className="flex items-center">
+                  <UsersIcon className="w-4 h-4 mr-1" />
+                  <span>{group.members.length} members</span>
+                </div>
+                <div className="flex items-center">
+                  <CalendarIcon className="w-4 h-4 mr-1" />
+                  <span>Created {group.createdAt.toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+            <Link
+              href={`/groups/${params.id}/expenses/new`}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <PlusIcon className="w-5 h-5 mr-2" />
+              Add Expense
+            </Link>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CurrencyRupeeIcon className="w-6 h-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Expenses</p>
+                <p className="text-2xl font-bold text-gray-900">₹{totalExpenses.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <UsersIcon className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Per Person</p>
+                <p className="text-2xl font-bold text-gray-900">₹{perPersonShare.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <CalendarIcon className="w-6 h-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Expenses</p>
+                <p className="text-2xl font-bold text-gray-900">{expenses.length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Expenses */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-900">Recent Expenses</h2>
+                  <Link
+                    href={`/groups/${params.id}/expenses`}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    View all
+                  </Link>
+                </div>
+              </div>
+              <div className="p-6">
+                {expenses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CurrencyRupeeIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No expenses yet</p>
+                    <Link
+                      href={`/groups/${params.id}/expenses/new`}
+                      className="inline-flex items-center mt-2 text-blue-600 hover:text-blue-700"
+                    >
+                      Add your first expense
+                      <ArrowRightIcon className="w-4 h-4 ml-1" />
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {expenses.slice(0, 5).map((expense) => (
+                      <div key={expense.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <CurrencyRupeeIcon className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="ml-4">
+                            <p className="font-medium text-gray-900">{expense.title}</p>
+                            <p className="text-sm text-gray-500">
+                              Paid by {expense.paidBy.name} • {expense.date.toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900">₹{expense.amount}</p>
+                          <p className="text-sm text-gray-500">{expense.category}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Balances */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-900">Balances</h2>
+                  <Link
+                    href={`/groups/${params.id}/balances`}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    Settle up
+                  </Link>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="space-y-4">
+                  {group.members.map((member) => {
+                    // Simplified balance calculation
+                    const memberExpenses = expenses.filter(e => e.paidBy.id === member.id);
+                    const memberPaid = memberExpenses.reduce((sum, e) => sum + e.amount, 0);
+                    const memberShare = perPersonShare;
+                    const balance = memberPaid - memberShare;
+
+                    return (
+                      <div key={member.id} className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium">
+                            {member.name.charAt(0)}
+                          </div>
+                          <span className="ml-3 text-sm font-medium text-gray-900">{member.name}</span>
+                        </div>
+                        <span className={`text-sm font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {balance >= 0 ? '+' : ''}₹{balance.toLocaleString()}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 
