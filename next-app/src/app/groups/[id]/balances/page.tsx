@@ -11,15 +11,16 @@ import {
   UserIcon
 } from '@heroicons/react/24/outline';
 
-export default function BalancesPage({ params }: { params: { id: string } }) {
-  const group = getGroupById(params.id);
+export default async function BalancesPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const group = getGroupById(id);
   
   if (!group) {
     notFound();
   }
 
-  const expenses = getExpensesByGroupId(params.id);
-  const settlements = getSettlementsByGroupId(params.id);
+  const expenses = getExpensesByGroupId(id);
+  const settlements = getSettlementsByGroupId(id);
   
   // Calculate balances for each member
   const calculateBalances = () => {
@@ -101,7 +102,7 @@ export default function BalancesPage({ params }: { params: { id: string } }) {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href={`/groups/${params.id}`}
+            href={`/groups/${id}`}
             className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4"
           >
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
@@ -210,8 +211,8 @@ export default function BalancesPage({ params }: { params: { id: string } }) {
                         <p className="font-medium text-gray-900">
                           {settlement.fromUser.name} paid {settlement.toUser.name}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {settlement.date.toLocaleDateString()}
+                        <p suppressHydrationWarning={true} className="text-sm text-gray-500">
+                          {settlement.date.toISOString().slice(0, 10)}
                         </p>
                       </div>
                     </div>

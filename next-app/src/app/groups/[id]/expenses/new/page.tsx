@@ -13,6 +13,7 @@ import {
   TagIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline';
+import React from "react";
 
 const expenseCategories: { value: ExpenseCategory; label: string; icon: string }[] = [
   { value: 'food', label: 'Food & Dining', icon: '🍽️' },
@@ -24,9 +25,10 @@ const expenseCategories: { value: ExpenseCategory; label: string; icon: string }
   { value: 'other', label: 'Other', icon: '📝' },
 ];
 
-export default function AddExpensePage({ params }: { params: { id: string } }) {
+export default function AddExpensePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const group = getGroupById(params.id);
+  const { id } = React.use(params);
+  const group = getGroupById(id);
   
   if (!group) {
     notFound();
@@ -96,7 +98,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
     console.log('Saving expense:', formData);
     
     // For now, just redirect back to the group
-    router.push(`/groups/${params.id}`);
+    router.push(`/groups/${id}`);
   };
 
   return (
@@ -105,7 +107,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href={`/groups/${params.id}`}
+            href={`/groups/${id}`}
             className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4"
           >
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
@@ -127,7 +129,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
               id="title"
               value={formData.title}
               onChange={(e) => handleInputChange('title', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black ${
                 errors.title ? 'border-red-300' : 'border-gray-300'
               }`}
               placeholder="e.g., Dinner at Restaurant"
@@ -150,7 +152,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
                   id="amount"
                   value={formData.amount}
                   onChange={(e) => handleInputChange('amount', e.target.value)}
-                  className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black ${
                     errors.amount ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="0.00"
@@ -169,7 +171,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
                 id="category"
                 value={formData.category}
                 onChange={(e) => handleInputChange('category', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
               >
                 {expenseCategories.map((category) => (
                   <option key={category.value} value={category.value}>
@@ -201,12 +203,12 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
                     value={member.id}
                     checked={formData.paidBy === member.id}
                     onChange={(e) => handleInputChange('paidBy', e.target.value)}
-                    className="sr-only"
+                    className="sr-only text-black"
                   />
                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium mr-3">
                     {member.name.charAt(0)}
                   </div>
-                  <span className="font-medium">{member.name}</span>
+                  <span className="font-medium text-gray-500">{member.name}</span>
                 </label>
               ))}
             </div>
@@ -237,7 +239,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium mr-3">
                     {member.name.charAt(0)}
                   </div>
-                  <span className="font-medium">{member.name}</span>
+                  <span className="font-medium text-gray-500">{member.name}</span>
                 </label>
               ))}
             </div>
@@ -245,7 +247,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
           </div>
 
           {/* Date and Notes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div suppressHydrationWarning={true} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
                 Date
@@ -259,7 +261,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
                   id="date"
                   value={formData.date}
                   onChange={(e) => handleInputChange('date', e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
                 />
               </div>
             </div>
@@ -273,7 +275,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
                 placeholder="Additional details..."
               />
             </div>
@@ -282,7 +284,7 @@ export default function AddExpensePage({ params }: { params: { id: string } }) {
           {/* Submit Buttons */}
           <div className="flex justify-end space-x-4">
             <Link
-              href={`/groups/${params.id}`}
+              href={`/groups/${id}`}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Cancel

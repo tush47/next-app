@@ -10,15 +10,16 @@ import {
   ArrowRightIcon 
 } from '@heroicons/react/24/outline';
 
-export default function GroupDashboard({ params }: { params: { id: string } }) {
-  const group = getGroupById(params.id);
+export default async function GroupDashboard({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const group = getGroupById(id);
   
   if (!group) {
     notFound();
   }
 
-  const expenses = getExpensesByGroupId(params.id);
-  const settlements = getSettlementsByGroupId(params.id);
+  const expenses = getExpensesByGroupId(id);
+  const settlements = getSettlementsByGroupId(id);
   
   // Calculate balances (simplified - in real app, this would be more complex)
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -42,12 +43,12 @@ export default function GroupDashboard({ params }: { params: { id: string } }) {
                 </div>
                 <div className="flex items-center">
                   <CalendarIcon className="w-4 h-4 mr-1" />
-                  <span>Created {group.createdAt.toLocaleDateString()}</span>
+                  <span suppressHydrationWarning={true}>Created {group.createdAt.toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
             <Link
-              href={`/groups/${params.id}/expenses/new`}
+              href={`/groups/${id}/expenses/new`}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
@@ -104,7 +105,7 @@ export default function GroupDashboard({ params }: { params: { id: string } }) {
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-semibold text-gray-900">Recent Expenses</h2>
                   <Link
-                    href={`/groups/${params.id}/expenses`}
+                    href={`/groups/${id}/expenses`}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
                     View all
@@ -117,7 +118,7 @@ export default function GroupDashboard({ params }: { params: { id: string } }) {
                     <CurrencyRupeeIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600">No expenses yet</p>
                     <Link
-                      href={`/groups/${params.id}/expenses/new`}
+                      href={`/groups/${id}/expenses/new`}
                       className="inline-flex items-center mt-2 text-blue-600 hover:text-blue-700"
                     >
                       Add your first expense
@@ -134,8 +135,8 @@ export default function GroupDashboard({ params }: { params: { id: string } }) {
                           </div>
                           <div className="ml-4">
                             <p className="font-medium text-gray-900">{expense.title}</p>
-                            <p className="text-sm text-gray-500">
-                              Paid by {expense.paidBy.name} • {expense.date.toLocaleDateString()}
+                            <p suppressHydrationWarning={true} className="text-sm text-gray-500">
+                              Paid by {expense.paidBy.name} • {expense.date.toISOString().slice(0, 10)}
                             </p>
                           </div>
                         </div>
@@ -158,7 +159,7 @@ export default function GroupDashboard({ params }: { params: { id: string } }) {
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-semibold text-gray-900">Balances</h2>
                   <Link
-                    href={`/groups/${params.id}/balances`}
+                    href={`/groups/${id}/balances`}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
                     Settle up

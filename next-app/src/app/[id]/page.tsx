@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 
-export default function User({ params }: { params: { id: string } }) {
+export default async function User({ params }: { params: { id: string } }) {
   // Check if id is a valid number
-  const id = parseInt(params.id);
-  if (isNaN(id) || id <= 0) {
+  const { id } = await params;
+  if (isNaN(parseInt(id)) || parseInt(id) <= 0) {
     notFound();
   }
   return (

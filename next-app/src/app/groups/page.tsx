@@ -49,7 +49,7 @@ export default function GroupsPage() {
                   </div>
                   <div className="flex items-center">
                     <CalendarIcon className="w-4 h-4 mr-1" />
-                    <span>{group.updatedAt.toLocaleDateString()}</span>
+                    <span suppressHydrationWarning={true}>{group.updatedAt.toLocaleDateString()}</span>
                   </div>
                 </div>
 

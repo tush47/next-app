@@ -90,7 +90,7 @@ export default function CreateGroupPage() {
               id="name"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black ${
                 errors.name ? 'border-red-300' : 'border-gray-300'
               }`}
               placeholder="e.g., Trip to Manali, Apartment Rent"
@@ -108,7 +108,7 @@ export default function CreateGroupPage() {
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
               placeholder="Brief description of the group..."
             />
           </div>
@@ -132,7 +132,7 @@ export default function CreateGroupPage() {
                     type="checkbox"
                     checked={formData.selectedMembers.includes(user.id)}
                     onChange={() => handleMemberToggle(user.id)}
-                    className="sr-only"
+                    className="sr-only text-black"
                   />
                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium mr-3">
                     {user.name.charAt(0)}

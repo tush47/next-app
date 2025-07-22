@@ -123,7 +123,7 @@ export default function ExpensesPage() {
                                 <UserIcon className="w-4 h-4 mr-1" />
                                 Paid by {expense.paidBy.name}
                               </span>
-                              <span className="flex items-center">
+                              <span suppressHydrationWarning={true}  className="flex items-center">
                                 <CalendarIcon className="w-4 h-4 mr-1" />
                                 {expense.date.toLocaleDateString()}
                               </span>
