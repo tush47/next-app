@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getGroupById, mockUsers } from '@/data/mockData';
-import { ExpenseCategory } from '@/types';
+import { Group, User, ExpenseCategory } from '@/types';
+import { dataService } from '@/utils/dataService';
 import { 
   ArrowLeftIcon, 
   CurrencyRupeeIcon,
@@ -25,27 +24,60 @@ const expenseCategories: { value: ExpenseCategory; label: string; icon: string }
   { value: 'other', label: 'Other', icon: '📝' },
 ];
 
-export default function AddExpensePage({ params }: { params: Promise<{ id: string }> }) {
+export default function AddExpensePage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { id } = React.use(params);
-  const group = getGroupById(id);
-  
-  if (!group) {
-    notFound();
-  }
+  const { id } = params;
+  const [group, setGroup] = useState<Group | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
     category: 'other' as ExpenseCategory,
-    paidBy: group.members[0]?.id || '',
-    splitBetween: group.members.map(member => member.id),
+    paidBy: '',
+    splitBetween: [] as string[],
     date: new Date().toISOString().split('T')[0],
-    // date: new Date(),
     notes: '',
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [groupData, usersData] = await Promise.all([
+          dataService.getGroupById(id),
+          dataService.getUsers()
+        ]);
+
+        if (!groupData) {
+          router.push('/404');
+          return;
+        }
+
+        setGroup(groupData);
+        setUsers(usersData);
+        
+        // Initialize form with group data
+        setFormData(prev => ({
+          ...prev,
+          paidBy: groupData.members[0]?.id || '',
+          splitBetween: groupData.members.map(member => member.id),
+        }));
+      } catch (err) {
+        setError('Failed to load group data');
+        console.error('Error fetching group data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, router]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -87,19 +119,73 @@ export default function AddExpensePage({ params }: { params: Promise<{ id: strin
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
 
-    // In a real app, you would save this to your backend
-    console.log('Saving expense:', formData);
-    
-    // For now, just redirect back to the group
-    router.push(`/groups/${id}`);
+    try {
+      setSubmitting(true);
+      const paidByUser = users.find(user => user.id === formData.paidBy);
+      const splitBetweenUsers = users.filter(user => formData.splitBetween.includes(user.id));
+      
+      if (!paidByUser) {
+        setErrors({ submit: 'Invalid user selected' });
+        return;
+      }
+
+      const newExpense = await dataService.createExpense({
+        title: formData.title,
+        amount: parseFloat(formData.amount),
+        paidBy: paidByUser,
+        splitBetween: splitBetweenUsers,
+        category: formData.category,
+        date: new Date(formData.date),
+        notes: formData.notes,
+        groupId: id,
+      });
+
+      if (newExpense) {
+        router.push(`/groups/${id}`);
+      } else {
+        setErrors({ submit: 'Failed to create expense. Please try again.' });
+      }
+    } catch (err) {
+      console.error('Error creating expense:', err);
+      setErrors({ submit: 'Failed to create expense. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading group data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !group) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error || 'Group not found'}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -291,11 +377,17 @@ export default function AddExpensePage({ params }: { params: Promise<{ id: strin
             </Link>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={submitting}
+              className={`px-6 py-2 rounded-lg transition-colors ${
+                submitting 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
-              Add Expense
+              {submitting ? 'Adding Expense...' : 'Add Expense'}
             </button>
           </div>
+          {errors.submit && <p className="text-red-600 text-sm mt-2 text-center">{errors.submit}</p>}
         </form>
       </div>
     </div>

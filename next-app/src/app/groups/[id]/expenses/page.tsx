@@ -1,13 +1,13 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getGroupById, getExpensesByGroupId } from '@/data/mockData';
 import { CurrencyRupeeIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { dataService } from '@/services/dataService';
 
 export default async function GroupExpensesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const group = getGroupById(id);
+  const group = await dataService.getGroupById(id);
   if (!group) notFound();
-  const expenses = getExpensesByGroupId(id);
+  const expenses = await dataService.getExpensesByGroupId(id);
 
   return (
     <div className="min-h-screen bg-gray-50">

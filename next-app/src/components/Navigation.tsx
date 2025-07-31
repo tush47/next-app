@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UsersIcon, CurrencyRupeeIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { UsersIcon, CurrencyRupeeIcon, Bars3Icon, XMarkIcon, SignalIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
 export default function Navigation() {
@@ -11,6 +11,7 @@ export default function Navigation() {
   const navigation = [
     { name: 'Groups', href: '/groups', icon: UsersIcon },
     { name: 'Expenses', href: '/expenses', icon: CurrencyRupeeIcon },
+    { name: 'API Status', href: '/api-status', icon: SignalIcon },
   ];
 
   return (

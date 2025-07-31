@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { mockExpenses, mockGroups } from '@/data/mockData';
+import { Expense, Group } from '@/types';
+import { dataService } from '@/utils/dataService';
 import { 
   CurrencyRupeeIcon, 
   CalendarIcon,
@@ -21,9 +23,62 @@ const expenseCategories: Record<string, { label: string; icon: string; color: st
 };
 
 export default function ExpensesPage() {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [expensesData, groupsData] = await Promise.all([
+          dataService.getExpenses(),
+          dataService.getGroups()
+        ]);
+        setExpenses(expensesData);
+        setGroups(groupsData);
+      } catch (err) {
+        setError('Failed to load expenses');
+        console.error('Error fetching expenses:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading expenses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Group expenses by group
-  const expensesByGroup = mockExpenses.reduce((acc, expense) => {
-    const group = mockGroups.find(g => g.id === expense.groupId);
+  const expensesByGroup = expenses.reduce((acc, expense) => {
+    const group = groups.find(g => g.id === expense.groupId);
     if (!group) return acc;
     
     if (!acc[group.id]) {
@@ -31,9 +86,9 @@ export default function ExpensesPage() {
     }
     acc[group.id].expenses.push(expense);
     return acc;
-  }, {} as Record<string, { group: any; expenses: any[] }>);
+  }, {} as Record<string, { group: Group; expenses: Expense[] }>);
 
-  const totalExpenses = mockExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -65,7 +120,7 @@ export default function ExpensesPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Transactions</p>
-                <p className="text-2xl font-bold text-gray-900">{mockExpenses.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{expenses.length}</p>
               </div>
             </div>
           </div>
@@ -147,23 +202,8 @@ export default function ExpensesPage() {
             </div>
           ))}
         </div>
-
-        {/* Empty State */}
-        {mockExpenses.length === 0 && (
-          <div className="text-center py-12">
-            <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <CurrencyRupeeIcon className="w-12 h-12 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses yet</h3>
-            <p className="text-gray-600 mb-6">Start adding expenses to your groups to see them here</p>
-            <Link
-              href="/groups"
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <ArrowRightIcon className="w-5 h-5 mr-2" />
-              Go to Groups
-            </Link>
-          </div>
+        {expenses.length === 0 && (
+          <div className="text-center text-gray-500 mt-8">No expenses found.</div>
         )}
       </div>
     </div>

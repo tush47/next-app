@@ -1,17 +1,67 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { mockGroups } from '@/data/mockData';
+import { Group } from '@/types';
+import { dataService } from '@/utils/dataService';
 import { PlusIcon, UsersIcon, CalendarIcon } from '@heroicons/react/24/outline';
 export default function GroupsPage() {
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        setLoading(true);
+        const fetchedGroups = await dataService.getGroups();
+        setGroups(fetchedGroups);
+      } catch (err) {
+        setError('Failed to load groups');
+        console.error('Error fetching groups:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGroups();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading groups...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Your Groups</h1>
-            <p className="text-gray-600 mt-2">Manage expenses and settlements with your friends</p>
+            <h1 className="text-3xl font-bold text-gray-900">Groups</h1>
+            <p className="text-gray-600 mt-2">Manage your groups and track shared expenses</p>
           </div>
           <Link
             href="/groups/new"
@@ -24,7 +74,7 @@ export default function GroupsPage() {
 
         {/* Groups Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockGroups.map((group) => (
+          {groups.map((group) => (
             <Link
               key={group.id}
               href={`/groups/${group.id}`}
@@ -34,7 +84,7 @@ export default function GroupsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="text-xl font-semibold text-gray-900">{group.name}</h3>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {group.members.length} members
+                    {group.members?.length ?? 0} members
                   </span>
                 </div>
                 
@@ -45,7 +95,7 @@ export default function GroupsPage() {
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <div className="flex items-center">
                     <UsersIcon className="w-4 h-4 mr-1" />
-                    <span>{group.members.length} people</span>
+                    <span>{group.members?.length ?? 0} people</span>
                   </div>
                   <div className="flex items-center">
                     <CalendarIcon className="w-4 h-4 mr-1" />
@@ -77,7 +127,7 @@ export default function GroupsPage() {
         </div>
 
         {/* Empty State */}
-        {mockGroups.length === 0 && (
+        {groups.length === 0 && (
           <div className="text-center py-12">
             <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <UsersIcon className="w-12 h-12 text-gray-400" />

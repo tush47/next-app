@@ -1,7 +1,10 @@
-// 'use client';
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getGroupById, getExpensesByGroupId, getSettlementsByGroupId } from '@/data/mockData';
+import { Group, Expense, Settlement } from '@/types';
+import { dataService } from '@/utils/dataService';
 import { 
   PlusIcon, 
   CurrencyRupeeIcon, 
@@ -10,17 +13,71 @@ import {
   ArrowRightIcon 
 } from '@heroicons/react/24/outline';
 
-export default async function GroupDashboard({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const group = getGroupById(id);
-  
-  if (!group) {
-    notFound();
+export default function GroupDashboard({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const { id } = params;
+  const [group, setGroup] = useState<Group | null>(null);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchGroupData = async () => {
+      try {
+        setLoading(true);
+        const [groupData, expensesData, settlementsData] = await Promise.all([
+          dataService.getGroupById(id),
+          dataService.getExpensesByGroupId(id),
+          dataService.getSettlementsByGroupId(id)
+        ]);
+
+        if (!groupData) {
+          router.push('/404');
+          return;
+        }
+
+        setGroup(groupData);
+        setExpenses(expensesData);
+        setSettlements(settlementsData);
+      } catch (err) {
+        setError('Failed to load group data');
+        console.error('Error fetching group data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGroupData();
+  }, [id, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading group...</p>
+        </div>
+      </div>
+    );
   }
 
-  const expenses = getExpensesByGroupId(id);
-  const settlements = getSettlementsByGroupId(id);
-  
+  if (error || !group) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error || 'Group not found'}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Calculate balances (simplified - in real app, this would be more complex)
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const perPersonShare = totalExpenses / group.members.length;

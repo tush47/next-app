@@ -1,21 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockUsers } from '@/data/mockData';
+import { User } from '@/types';
+import { dataService } from '@/utils/dataService';
 import { 
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 
 export default function CreateGroupPage() {
   const router = useRouter();
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    selectedMembers: [mockUsers[0]?.id].filter(Boolean),
+    selectedMembers: [] as string[],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const fetchedUsers = await dataService.getUsers();
+        setUsers(fetchedUsers);
+        if (fetchedUsers.length > 0) {
+          setFormData(prev => ({ ...prev, selectedMembers: [fetchedUsers[0].id] }));
+        }
+      } catch (err) {
+        console.error('Error fetching users:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -48,18 +71,34 @@ export default function CreateGroupPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
 
-    // In a real app, you would save this to your backend
-    console.log('Creating group:', formData);
-    
-    // For now, just redirect to groups page
-    router.push('/groups');
+    try {
+      setSubmitting(true);
+      const selectedUsers = users.filter(user => formData.selectedMembers.includes(user.id));
+      
+      const newGroup = await dataService.createGroup({
+        name: formData.name,
+        description: formData.description,
+        members: selectedUsers,
+      });
+
+      if (newGroup) {
+        router.push('/groups');
+      } else {
+        setErrors({ submit: 'Failed to create group. Please try again.' });
+      }
+    } catch (err) {
+      console.error('Error creating group:', err);
+      setErrors({ submit: 'Failed to create group. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -79,7 +118,15 @@ export default function CreateGroupPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {loading ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading users...</p>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           {/* Group Name */}
           <div className="mb-6">
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -119,7 +166,7 @@ export default function CreateGroupPage() {
               Select Members
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {mockUsers.map((user) => (
+              {users.map((user) => (
                 <label
                   key={user.id}
                   className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -160,12 +207,19 @@ export default function CreateGroupPage() {
             </Link>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={submitting}
+              className={`px-6 py-2 rounded-lg transition-colors ${
+                submitting 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
-              Create Group
+              {submitting ? 'Creating Group...' : 'Create Group'}
             </button>
           </div>
+          {errors.submit && <p className="text-red-600 text-sm mt-2 text-center">{errors.submit}</p>}
         </form>
+        )}
       </div>
     </div>
   );
